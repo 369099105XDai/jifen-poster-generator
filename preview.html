@@ -734,17 +734,27 @@
 
         // 加载默认背景图片
         function loadDefaultBackgrounds() {
+            console.log('开始加载背景图片...');
+            
             const bgHorizontal = new Image();
             bgHorizontal.onload = function() {
+                console.log('横版背景加载成功:', bgHorizontal.width, 'x', bgHorizontal.height);
                 state.defaultBgImages.horizontal = bgHorizontal;
                 render();
+            };
+            bgHorizontal.onerror = function() {
+                console.error('横版背景加载失败：bg.png');
             };
             bgHorizontal.src = 'bg.png';
 
             const bgVertical = new Image();
             bgVertical.onload = function() {
+                console.log('竖版背景加载成功:', bgVertical.width, 'x', bgVertical.height);
                 state.defaultBgImages.vertical = bgVertical;
                 render();
+            };
+            bgVertical.onerror = function() {
+                console.error('竖版背景加载失败：bg_9x16.png');
             };
             bgVertical.src = 'bg_9x16.png';
 
@@ -989,15 +999,23 @@
 
         function drawBackground(ctx, W, H) {
             const bgImage = state.bgImages[state.mode] || state.defaultBgImages[state.mode];
-            if (bgImage) {
+            if (bgImage && bgImage.complete && bgImage.naturalWidth > 0) {
                 ctx.drawImage(bgImage, 0, 0, W, H);
             } else {
+                // 背景图未加载，使用渐变备用
                 const gradient = ctx.createLinearGradient(0, 0, W, H);
                 gradient.addColorStop(0, '#0a0a0f');
                 gradient.addColorStop(0.5, '#1a1a2e');
                 gradient.addColorStop(1, '#0a0a0f');
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, W, H);
+                
+                // 显示提示信息
+                ctx.fillStyle = 'rgba(255, 108, 0, 0.8)';
+                ctx.font = 'bold ' + Math.round(H * 0.03) + 'px "Microsoft YaHei"';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('背景图加载中...', W / 2, H / 2);
             }
         }
 
