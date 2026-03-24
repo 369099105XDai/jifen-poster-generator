@@ -85,17 +85,18 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 15px;
+            padding: 0;
             overflow: hidden;
             background: #0d0d15;
             position: relative;
         }
         .preview-header {
-            margin-bottom: 15px;
+            margin-bottom: 0;
             display: flex;
-            gap: 15px;
+            gap: 8px;
             align-items: center;
             flex-shrink: 0;
+            padding: 8px;
         }
         .mode-toggle {
             display: flex;
@@ -125,12 +126,14 @@
             justify-content: center;
             width: 100%;
             min-height: 0;
+            padding: 0;
+            margin: 0;
         }
         .canvas-container {
-            border: 2px solid #444;
-            border-radius: 8px;
+            border: none;
+            border-radius: 0;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            box-shadow: none;
         }
         #previewCanvas {
             display: block;
@@ -180,9 +183,9 @@
         }
         .btn-refresh {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            padding: 10px 20px;
+            top: 8px;
+            left: 8px;
+            padding: 8px 16px;
             background: linear-gradient(135deg, #e74c3c, #c0392b);
             border: none;
             color: #fff;
