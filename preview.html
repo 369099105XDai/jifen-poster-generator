@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分兑换海报预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .control-panel {
+            width: 480px;
+            min-width: 350px;
+            max-width: 800px;
+            background: #0a0a0f;
+            padding: 15px 20px;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+            font-size: 12px;
+            resize: horizontal;
+        }
+        .control-panel h2 {
+            color: #FF6C00;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border-bottom: 2px solid #FF6C00;
+            padding-bottom: 8px;
+        }
+        .control-group {
+            margin-bottom: 12px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 4px;
+            color: #DDA650;
+            font-size: 12px;
+        }
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #333;
+            border-radius: 3px;
+            outline: none;
+        }
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #FF6C00;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .control-group select {
+            width: 100%;
+            padding: 6px 10px;
+            background: #1a1a2e;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .control-group select:focus {
+            border-color: #FF6C00;
+            outline: none;
+        }
+        .value-display {
+            float: right;
+            font-size: 11px;
+            color: #888;
+        }
+        .preview-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            overflow: hidden;
+            background: #0d0d15;
+            position: relative;
+        }
+        .preview-header {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .mode-toggle {
+            display: flex;
+            gap: 8px;
+        }
+        .mode-btn {
+            padding: 8px 16px;
+            background: #1a1a2e;
+            border: 2px solid #444;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+        }
+        .mode-btn.active {
+            border-color: #FF6C00;
+            background: rgba(255, 108, 0, 0.2);
+        }
+        .mode-btn:hover {
+            border-color: #DDA650';
+        }
+        .canvas-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 0;
+        }
+        .canvas-container {
+            border: 2px solid #444;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        #previewCanvas {
+            display: block;
+        }
+        .section-title {
+            color: #FF6C00;
+            font-size: 13px;
+            margin: 12px 0 8px 0;
+            padding-top: 10px;
+            border-top: 1px solid #333;
+        }
+        .section-title:first-of-type {
+            border-top: none;
+            margin-top: 0;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            background: #1a1a2e;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 12px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        textarea:focus {
+            border-color: #FF6C00;
+            outline: none;
+        }
+        .btn-action {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #FF6C00, #DDA650);
+            border: none;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 8px;
+            transition: transform 0.2s;
+        }
+        .btn-action:hover {
+            transform: scale(1.02);
+        }
+        .btn-refresh {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: none;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+            z-index: 100;
+        }
+        .btn-refresh:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.6);
+        }
+        .btn-upload {
+            width: 100%;
+            padding: 6px;
+            background: #1a1a2e;
+            border: 2px dashed #444;
+            color: #DDA650;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .btn-upload:hover {
+            border-color: #FF6C00;
+            background: rgba(255, 108, 0, 0.1);
+        }
+        .btn-upload.has-file {
+            border-style: solid;
+            border-color: #FF6C00;
+            color: #FF6C00;
+        }
+        .btn-clear {
+            padding: 3px 8px;
+            background: #3a1a1a;
+            border: 1px solid #663333;
+            color: #ff6666;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            margin-left: 4px;
+        }
+        .btn-clear:hover {
+            background: #4a2a2a;
+            color: #ff8888;
+        }
+        .btn-small {
+            padding: 3px 8px;
+            background: #333;
+            border: 1px solid #555;
+            color: #888;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            margin-top: 4px;
+        }
+        .btn-small:hover {
+            background: #444;
+            color: #fff;
+        }
+        .upload-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .upload-row .btn-upload {
+            flex: 1;
+        }
+        .preview-thumb {
+            width: 100%;
+            height: 35px;
+            background: #1a1a2e;
+            border-radius: 4px;
+            margin-top: 4px;
+            overflow: hidden;
+            display: none;
+        }
+        .preview-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .font-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .font-row select {
+            flex: 1;
+        }
+        .font-row .btn-upload {
+            width: auto;
+            padding: 6px 10px;
+        }
+        /* 图标网格布局 */
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .icon-item {
+            text-align: center;
+        }
+        .icon-item label {
+            font-size: 11px;
+            color: #888;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .icon-item .btn-upload {
+            padding: 5px 3px;
+            font-size: 10px;
+        }
+        .icon-item .preview-thumb {
+            height: 30px;
+            margin-top: 3px;
+        }
+        /* 两列布局 */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="control-panel">
+        <h2>积分兑换海报预览</h2>
+
+        <!-- 内容设置 -->
+        <div class="section-title">内容设置</div>
+        <div class="control-group">
+            <label>俱乐部名称</label>
+            <input type="text" id="clubName" value="杆杆响台球俱乐部" style="width:100%;padding:6px;background:#1a1a2e;border:1px solid #444;color:#fff;border-radius:4px;font-size:12px;">
+        </div>
+        <div class="control-group">
+            <label>兑换列表（每行：积分 描述）</label>
+            <div style="display:flex;gap:6px;margin-bottom:6px;">
+                <input type="file" id="listFile" accept=".txt,.doc,.docx" style="display:none">
+                <button class="btn-upload" style="flex:1" onclick="document.getElementById('listFile').click()">上传文本</button>
+                <button class="btn-upload" style="flex:1" onclick="loadTemplate()">使用模板</button>
+            </div>
+            <textarea id="itemList">500 皮头
+800 巧克力
+1000 手套
+1500 台费抵扣券
+2000 精美饮料
+3000 速食套餐</textarea>
+        </div>
+
+        <!-- 背景设置 -->
+        <div class="section-title">背景设置</div>
+        <div class="two-col">
+            <div class="control-group">
+                <label>横版背景 (16:9)</label>
+                <div class="upload-row">
+                    <input type="file" id="bgHorizontal" accept="image/*" style="display:none">
+                    <button class="btn-upload" id="bgHorizontalBtn" onclick="document.getElementById('bgHorizontal').click()">上传图片</button>
+                    <button class="btn-clear" id="bgHorizontalClear" onclick="clearUpload('bgHorizontal')" style="display:none">清除</button>
+                </div>
+                <div class="preview-thumb" id="bgHorizontalPreview"></div>
+            </div>
+            <div class="control-group">
+                <label>竖版背景</label>
+                <div class="upload-row">
+                    <input type="file" id="bgVertical" accept="image/*" style="display:none">
+                    <button class="btn-upload" id="bgVerticalBtn" onclick="document.getElementById('bgVertical').click()">上传图片</button>
+                    <button class="btn-clear" id="bgVerticalClear" onclick="clearUpload('bgVertical')" style="display:none">清除</button>
+                </div>
+                <div class="preview-thumb" id="bgVerticalPreview"></div>
+            </div>
+        </div>
+
+        <!-- 字体设置 -->
+        <div class="section-title">字体设置</div>
+        <div class="two-col">
+            <div class="control-group">
+                <label>标题字体</label>
+                <div class="font-row">
+                    <select id="titleFont">
+                        <option value="Microsoft YaHei">微软雅黑</option>
+                        <option value="SimHei">黑体</option>
+                        <option value="KaiTi">楷体</option>
+                        <option value="SimSun">宋体</option>
+                    </select>
+                    <input type="file" id="titleFontFile" accept=".ttf,.otf,.woff,.woff2" style="display:none">
+                    <button class="btn-upload" id="titleFontBtn" onclick="document.getElementById('titleFontFile').click()">上传</button>
+                    <button class="btn-clear" id="titleFontClear" onclick="clearUpload('titleFont')" style="display:none">清除</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>正文字体</label>
+                <div class="font-row">
+                    <select id="bodyFont">
+                        <option value="Microsoft YaHei">微软雅黑</option>
+                        <option value="SimHei">黑体</option>
+                        <option value="KaiTi">楷体</option>
+                        <option value="SimSun">宋体</option>
+                    </select>
+                    <input type="file" id="bodyFontFile" accept=".ttf,.otf,.woff,.woff2" style="display:none">
+                    <button class="btn-upload" id="bodyFontBtn" onclick="document.getElementById('bodyFontFile').click()">上传</button>
+                    <button class="btn-clear" id="bodyFontClear" onclick="clearUpload('bodyFont')" style="display:none">清除</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 标题设置 -->
+        <div class="section-title">标题设置</div>
+        <div class="control-group">
+            <label>标题大小 <span class="value-display" id="titleSizeVal">100%</span></label>
+            <input type="range" id="titleSize" min="50" max="200" value="100">
+        </div>
+        <div class="control-group">
+            <label>标题X位置 <span class="value-display" id="titleXVal">50%</span></label>
+            <input type="range" id="titleX" min="0" max="100" value="50">
+        </div>
+        <div class="control-group">
+            <label>标题Y位置 <span class="value-display" id="titleYVal">9%</span></label>
+            <input type="range" id="titleY" min="3" max="20" value="9">
+        </div>
+        <div class="control-group">
+            <label>发光强度 <span class="value-display" id="glowIntensityVal">100%</span></label>
+            <input type="range" id="glowIntensity" min="0" max="200" value="100">
+        </div>
+
+        <!-- 列表整体缩放 -->
+        <div class="section-title">列表整体缩放</div>
+        <div class="control-group">
+            <label>整体缩放 <span class="value-display" id="itemScaleVal">100%</span></label>
+            <input type="range" id="itemScale" min="50" max="150" value="100">
+        </div>
+
+        <!-- 序号圆圈设置 -->
+        <div class="section-title">序号圆圈设置</div>
+        <div class="control-group">
+            <label>圆圈大小 <span class="value-display" id="circleSizeVal">100%</span></label>
+            <input type="range" id="circleSize" min="50" max="150" value="100">
+        </div>
+        <div class="control-group">
+            <label>圆圈X位置 <span class="value-display" id="circleXVal">10%</span></label>
+            <input type="range" id="circleX" min="5" max="50" value="10">
+        </div>
+
+        <!-- 积分文字设置 -->
+        <div class="section-title">积分文字设置</div>
+        <div class="control-group">
+            <label>积分大小 <span class="value-display" id="pointsSizeVal">100%</span></label>
+            <input type="range" id="pointsSize" min="50" max="150" value="100">
+        </div>
+        <div class="control-group">
+            <label>积分Y偏移 <span class="value-display" id="pointsYVal">0</span></label>
+            <input type="range" id="pointsY" min="-100" max="100" value="0">
+        </div>
+
+        <!-- 描述文字设置 -->
+        <div class="section-title">描述文字设置</div>
+        <div class="control-group">
+            <label>描述大小 <span class="value-display" id="descSizeVal">100%</span></label>
+            <input type="range" id="descSize" min="50" max="150" value="100">
+        </div>
+        <div class="control-group">
+            <label>描述Y偏移 <span class="value-display" id="descYVal">0</span></label>
+            <input type="range" id="descY" min="-100" max="100" value="0">
+        </div>
+
+        <!-- 产品图片设置 -->
+        <div class="section-title">产品图片设置</div>
+        <div class="control-group">
+            <label>图片大小 <span class="value-display" id="iconSizeVal">100%</span></label>
+            <input type="range" id="iconSize" min="50" max="150" value="100">
+        </div>
+        <div class="control-group">
+            <label>图片X位置 <span class="value-display" id="iconXVal">90%</span></label>
+            <input type="range" id="iconX" min="50" max="98" value="90">
+        </div>
+        <div class="control-group">
+            <label>图片边框粗细 <span class="value-display" id="iconBorderVal">100%</span></label>
+            <input type="range" id="iconBorder" min="0" max="300" value="100">
+        </div>
+
+        <!-- 产品图片上传（按序号） -->
+        <div class="section-title">产品图片上传（共 <span id="iconCount">0</span> 项）</div>
+        <div class="control-group" style="margin-bottom: 8px;">
+            <button class="btn-upload" onclick="autoMatchProductImages()" style="background: linear-gradient(135deg, #2a5a2a, #3a7a3a); border-color: #4a8a4a;">
+                自动匹配产品图片
+            </button>
+        </div>
+        <div class="icon-grid" id="iconGrid">
+            <!-- 动态生成 -->
+        </div>
+
+        <!-- 二维码/商家Logo设置 -->
+        <div class="section-title">二维码/商家Logo设置</div>
+        <div class="two-col">
+            <div class="control-group">
+                <label>二维码</label>
+                <div class="upload-row">
+                    <input type="file" id="qrcodeFile" accept="image/*" style="display:none">
+                    <button class="btn-upload" id="qrcodeBtn" onclick="document.getElementById('qrcodeFile').click()">上传</button>
+                    <button class="btn-clear" id="qrcodeClear" onclick="clearUpload('qrcode')" style="display:none">清除</button>
+                </div>
+                <div class="preview-thumb" id="qrcodePreview"></div>
+            </div>
+            <div class="control-group">
+                <label>商家Logo</label>
+                <div class="upload-row">
+                    <input type="file" id="logoFile" accept="image/*" style="display:none">
+                    <button class="btn-upload" id="logoBtn" onclick="document.getElementById('logoFile').click()">上传</button>
+                    <button class="btn-clear" id="logoClear" onclick="clearUpload('logo')" style="display:none">清除</button>
+                </div>
+                <div class="preview-thumb" id="logoPreview"></div>
+            </div>
+        </div>
+        <div class="control-group">
+            <label>二维码大小 <span class="value-display" id="qrcodeSizeVal">100%</span></label>
+            <input type="range" id="qrcodeSize" min="30" max="300" value="100">
+        </div>
+        <div class="control-group">
+            <label>Logo大小 <span class="value-display" id="logoSizeVal">100%</span></label>
+            <input type="range" id="logoSize" min="30" max="300" value="100">
+        </div>
+        <div class="control-group">
+            <label>X位置 <span class="value-display" id="titleIconXVal">95%</span></label>
+            <input type="range" id="titleIconX" min="50" max="100" value="95">
+        </div>
+        <div class="control-group">
+            <label>Y位置 <span class="value-display" id="titleIconYVal">9%</span></label>
+            <input type="range" id="titleIconY" min="3" max="30" value="9">
+        </div>
+        <div class="control-group">
+            <label>间距 <span class="value-display" id="titleIconGapVal">20px</span></label>
+            <input type="range" id="titleIconGap" min="0" max="300" value="20">
+        </div>
+
+        <!-- 底部文字设置 -->
+        <div class="section-title">底部文字设置</div>
+        <div class="control-group">
+            <label>底部文字大小 <span class="value-display" id="footerSizeVal">100%</span></label>
+            <input type="range" id="footerSize" min="50" max="200" value="100">
+        </div>
+        <div class="control-group">
+            <label>底部文字X位置 <span class="value-display" id="footerXVal">10%</span></label>
+            <input type="range" id="footerX" min="0" max="100" value="10">
+        </div>
+        <div class="control-group">
+            <label>底部文字Y位置 <span class="value-display" id="footerYVal">95%</span></label>
+            <input type="range" id="footerY" min="80" max="99" value="95">
+        </div>
+
+        <button class="btn-action" onclick="exportImage()">导出高清图片</button>
+    </div>
+
+    <div class="preview-area">
+        <button class="btn-refresh" onclick="location.reload()">刷新页面</button>
+        <div class="preview-header">
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="btnHorizontal" onclick="setMode('horizontal')">横版 (16:9)</button>
+                <button class="mode-btn" id="btnVertical" onclick="setMode('vertical')">竖版</button>
+            </div>
+            <select id="verticalSizeSelect" style="padding:6px 10px;background:#1a1a2e;border:1px solid #444;color:#fff;border-radius:4px;display:none;font-size:12px;" onchange="changeVerticalSize(this.value)">
+                <option value="1.8m x 0.8m">1.8m × 0.8m</option>
+                <option value="1.8m x 1m">1.8m × 1m</option>
+            </select>
+        </div>
+        <div class="canvas-wrapper">
+            <div class="canvas-container">
+                <canvas id="previewCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 打印标准分辨率计算（150 DPI 大型海报标准）
+        const state = {
+            mode: 'horizontal',
+            scale: 0.12, // 缩小预览比例
+            zoomScale: 1.0, // 鼠标滚轮缩放比例
+            sizes: {
+                horizontal: { width: 10500, height: 5906 },
+                vertical: { width: 4724, height: 10630 }
+            },
+            verticalSizes: {
+                '1.8m x 0.8m': { width: 4724, height: 10630 },
+                '1.8m x 1m': { width: 5906, height: 10630 }
+            },
+            currentVerticalSize: '1.8m x 0.8m',
+            bgImages: { horizontal: null, vertical: null },
+            defaultBgImages: { horizontal: null, vertical: null },
+            customFonts: { title: null, body: null },
+            // 按序号存储图标
+            itemIcons: {},
+            lastItemCount: 0,
+            // 二维码图片
+            qrcodeImage: null,
+            // 商家Logo图片
+            logoImage: null,
+            // 产品图片数据库
+            productDatabase: null,
+            // 自动匹配的图片路径
+            autoMatchedIcons: {}
+        };
+
+        // 生成图标上传区域（根据兑换列表行数动态生成）
+        function generateIconGrid(count) {
+            count = count || 0;
+            const grid = document.getElementById('iconGrid');
+            const countDisplay = document.getElementById('iconCount');
+            countDisplay.textContent = count;
+
+            // 保存当前已上传的图标状态
+            const existingIcons = { ...state.itemIcons };
+
+            grid.innerHTML = '';
+            for (let i = 1; i <= count; i++) {
+                const num = String(i).padStart(2, '0');
+                const hasIcon = existingIcons[i];
+                const div = document.createElement('div');
+                div.className = 'icon-item';
+                div.innerHTML = `
+                    <label>${num}</label>
+                    <div class="upload-row">
+                        <input type="file" id="icon_${i}" accept="image/*" style="display:none">
+                        <button class="btn-upload ${hasIcon ? 'has-file' : ''}" id="icon_${i}Btn" onclick="document.getElementById('icon_${i}').click()">${hasIcon ? '已上传' : '上传'}</button>
+                        <button class="btn-clear" id="icon_${i}Clear" onclick="clearIconUpload(${i})" style="${hasIcon ? 'display:inline-block' : 'display:none'}">清除</button>
+                    </div>
+                    <div class="preview-thumb" id="icon_${i}Preview" style="display:${hasIcon ? 'block' : 'none'}"></div>
+                `;
+                grid.appendChild(div);
+
+                // 如果之前有上传过图标，恢复预览
+                if (hasIcon) {
+                    const preview = div.querySelector(`#icon_${i}Preview`);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 60;
+                    canvas.height = 30;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(existingIcons[i], 0, 0, 60, 30);
+                    preview.innerHTML = `<img src="${canvas.toDataURL()}">`;
+                }
+            }
+            bindIconEvents(count);
+        }
+
+        // 绑定图标上传事件
+        function bindIconEvents(count) {
+            for (let i = 1; i <= count; i++) {
+                const input = document.getElementById(`icon_${i}`);
+                if (input) {
+                    input.addEventListener('change', function(e) {
+                        const file = e.target.files[0];
+                        if (!file) return;
+
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const img = new Image();
+                            img.onload = function() {
+                                state.itemIcons[i] = img;
+                                const btn = document.getElementById(`icon_${i}Btn`);
+                                const preview = document.getElementById(`icon_${i}Preview`);
+                                const clearBtn = document.getElementById(`icon_${i}Clear`);
+                                btn.classList.add('has-file');
+                                btn.textContent = '已上传';
+                                clearBtn.style.display = 'inline-block';
+                                preview.style.display = 'block';
+                                preview.innerHTML = '<img src="' + event.target.result + '">';
+                                render();
+                            };
+                            img.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
+        }
+
+        // 清除图标上传
+        function clearIconUpload(index) {
+            delete state.itemIcons[index];
+            delete state.autoMatchedIcons[index];
+            const btn = document.getElementById(`icon_${index}Btn`);
+            const preview = document.getElementById(`icon_${index}Preview`);
+            const clearBtn = document.getElementById(`icon_${index}Clear`);
+            btn.classList.remove('has-file');
+            btn.textContent = '上传';
+            clearBtn.style.display = 'none';
+            preview.style.display = 'none';
+            preview.innerHTML = '';
+            document.getElementById(`icon_${index}`).value = '';
+            render();
+        }
+
+        // 清除上传文件
+        function clearUpload(type) {
+            if (type === 'bgHorizontal') {
+                state.bgImages.horizontal = null;
+                document.getElementById('bgHorizontalBtn').classList.remove('has-file');
+                document.getElementById('bgHorizontalBtn').textContent = '上传图片';
+                document.getElementById('bgHorizontalClear').style.display = 'none';
+                document.getElementById('bgHorizontalPreview').style.display = 'none';
+                document.getElementById('bgHorizontalPreview').innerHTML = '';
+                document.getElementById('bgHorizontal').value = '';
+            } else if (type === 'bgVertical') {
+                state.bgImages.vertical = null;
+                document.getElementById('bgVerticalBtn').classList.remove('has-file');
+                document.getElementById('bgVerticalBtn').textContent = '上传图片';
+                document.getElementById('bgVerticalClear').style.display = 'none';
+                document.getElementById('bgVerticalPreview').style.display = 'none';
+                document.getElementById('bgVerticalPreview').innerHTML = '';
+                document.getElementById('bgVertical').value = '';
+            } else if (type === 'titleFont') {
+                state.customFonts.title = null;
+                document.getElementById('titleFontBtn').classList.remove('has-file');
+                document.getElementById('titleFontBtn').textContent = '上传';
+                document.getElementById('titleFontClear').style.display = 'none';
+                document.getElementById('titleFontFile').value = '';
+            } else if (type === 'bodyFont') {
+                state.customFonts.body = null;
+                document.getElementById('bodyFontBtn').classList.remove('has-file');
+                document.getElementById('bodyFontBtn').textContent = '上传';
+                document.getElementById('bodyFontClear').style.display = 'none';
+                document.getElementById('bodyFontFile').value = '';
+            } else if (type === 'qrcode') {
+                state.qrcodeImage = null;
+                document.getElementById('qrcodeBtn').classList.remove('has-file');
+                document.getElementById('qrcodeBtn').textContent = '上传';
+                document.getElementById('qrcodeClear').style.display = 'none';
+                document.getElementById('qrcodePreview').style.display = 'none';
+                document.getElementById('qrcodePreview').innerHTML = '';
+                document.getElementById('qrcodeFile').value = '';
+            } else if (type === 'logo') {
+                state.logoImage = null;
+                document.getElementById('logoBtn').classList.remove('has-file');
+                document.getElementById('logoBtn').textContent = '上传';
+                document.getElementById('logoClear').style.display = 'none';
+                document.getElementById('logoPreview').style.display = 'none';
+                document.getElementById('logoPreview').innerHTML = '';
+                document.getElementById('logoFile').value = '';
+            }
+            render();
+        }
+
+        // 加载默认背景图片
+        function loadDefaultBackgrounds() {
+            const bgHorizontal = new Image();
+            bgHorizontal.onload = function() {
+                state.defaultBgImages.horizontal = bgHorizontal;
+                render();
+            };
+            bgHorizontal.src = 'assets/bg.png';
+
+            const bgVertical = new Image();
+            bgVertical.onload = function() {
+                state.defaultBgImages.vertical = bgVertical;
+                render();
+            };
+            bgVertical.src = 'assets/bg_9x16.png';
+
+            // 加载产品图片数据库
+            loadProductDatabase();
+        }
+
+        // 加载产品图片数据库
+        function loadProductDatabase() {
+            fetch('assets/icons.json')
+                .then(response => response.json())
+                .then(data => {
+                    state.productDatabase = data;
+                    console.log('产品图片数据库加载成功，共', data.products.length, '个分类');
+                })
+                .catch(error => {
+                    console.error('加载产品图片数据库失败:', error);
+                });
+        }
+
+        // 根据产品名称匹配图片
+        function matchProductImage(productName) {
+            if (!state.productDatabase) return null;
+
+            const name = productName.toLowerCase();
+
+            for (const category of state.productDatabase.products) {
+                // 检查关键词是否匹配
+                for (const keyword of category.keywords) {
+                    if (name.includes(keyword.toLowerCase())) {
+                        // 找到匹配的分类，返回第一张图片
+                        if (category.images.length > 0) {
+                            const img = category.images[0];
+                            return {
+                                path: `assets/产品图片/${category.category}/${img.file}`,
+                                name: img.name,
+                                category: category.category
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        // 自动匹配所有产品图片
+        function autoMatchProductImages() {
+            const params = getParams();
+            if (!params.items.length) return;
+
+            let matchedCount = 0;
+            const loadPromises = [];
+
+            params.items.forEach((item, index) => {
+                const itemNumber = index + 1;
+
+                // 如果已经手动上传了图片，跳过
+                if (state.itemIcons[itemNumber]) return;
+
+                const match = matchProductImage(item.name);
+                if (match) {
+                    const promise = new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = function() {
+                            state.itemIcons[itemNumber] = img;
+                            state.autoMatchedIcons[itemNumber] = match.path;
+
+                            // 更新UI
+                            const btn = document.getElementById(`icon_${itemNumber}Btn`);
+                            const preview = document.getElementById(`icon_${itemNumber}Preview`);
+                            const clearBtn = document.getElementById(`icon_${itemNumber}Clear`);
+
+                            if (btn) {
+                                btn.classList.add('has-file');
+                                btn.textContent = '已匹配';
+                            }
+                            if (clearBtn) {
+                                clearBtn.style.display = 'inline-block';
+                            }
+                            if (preview) {
+                                preview.style.display = 'block';
+                                preview.innerHTML = `<img src="${match.path}" style="object-fit:cover;">`;
+                            }
+
+                            matchedCount++;
+                            resolve();
+                        };
+                        img.onerror = function() {
+                            console.warn('图片加载失败:', match.path);
+                            resolve();
+                        };
+                        img.src = match.path;
+                    });
+                    loadPromises.push(promise);
+                }
+            });
+
+            Promise.all(loadPromises).then(() => {
+                console.log(`自动匹配完成，共匹配 ${matchedCount} 张图片`);
+                render();
+            });
+        }
+
+        // 获取参数
+        function getParams() {
+            let titleFont = document.getElementById('titleFont').value;
+            let bodyFont = document.getElementById('bodyFont').value;
+            if (state.customFonts.title) titleFont = state.customFonts.title;
+            if (state.customFonts.body) bodyFont = state.customFonts.body;
+
+            return {
+                clubName: document.getElementById('clubName').value,
+                items: parseItems(document.getElementById('itemList').value),
+                titleFont, bodyFont,
+                titleSize: parseInt(document.getElementById('titleSize').value) / 100,
+                titleX: parseInt(document.getElementById('titleX').value) / 100,
+                titleY: parseInt(document.getElementById('titleY').value) / 100,
+                glowIntensity: parseInt(document.getElementById('glowIntensity').value) / 100,
+                circleSize: parseInt(document.getElementById('circleSize').value) / 100,
+                circleX: parseInt(document.getElementById('circleX').value) / 100,
+                pointsSize: parseInt(document.getElementById('pointsSize').value) / 100,
+                pointsY: parseInt(document.getElementById('pointsY').value),
+                descSize: parseInt(document.getElementById('descSize').value) / 100,
+                descY: parseInt(document.getElementById('descY').value),
+                iconSize: parseInt(document.getElementById('iconSize').value) / 100,
+                iconX: parseInt(document.getElementById('iconX').value) / 100,
+                iconBorder: parseInt(document.getElementById('iconBorder').value) / 100,
+                itemScale: parseInt(document.getElementById('itemScale').value) / 100,
+                qrcodeSize: parseInt(document.getElementById('qrcodeSize').value) / 100,
+                logoSize: parseInt(document.getElementById('logoSize').value) / 100,
+                titleIconX: parseInt(document.getElementById('titleIconX').value) / 100,
+                titleIconY: parseInt(document.getElementById('titleIconY').value) / 100,
+                titleIconGap: parseInt(document.getElementById('titleIconGap').value),
+                footerSize: parseInt(document.getElementById('footerSize').value) / 100,
+                footerX: parseInt(document.getElementById('footerX').value) / 100,
+                footerY: parseInt(document.getElementById('footerY').value) / 100
+            };
+        }
+
+        // 解析项目列表
+        function parseItems(text) {
+            const lines = text.trim().split('\n');
+            const items = [];
+            let itemNumber = 1;
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) return;
+                const match = trimmed.match(/^(\d+)\s+(.+)$/);
+                if (match) {
+                    items.push({
+                        number: itemNumber++,
+                        points: parseInt(match[1]),
+                        name: match[2].trim()
+                    });
+                }
+            });
+            return items;
+        }
+
+        function setMode(mode) {
+            state.mode = mode;
+            document.getElementById('btnHorizontal').classList.toggle('active', mode === 'horizontal');
+            document.getElementById('btnVertical').classList.toggle('active', mode === 'vertical');
+            document.getElementById('verticalSizeSelect').style.display = mode === 'vertical' ? 'block' : 'none';
+            render();
+        }
+
+        function changeVerticalSize(sizeName) {
+            state.currentVerticalSize = sizeName;
+            state.sizes.vertical = state.verticalSizes[sizeName];
+            render();
+        }
+
+        // 渲染预览
+        function render() {
+            try {
+                const canvas = document.getElementById('previewCanvas');
+                const ctx = canvas.getContext('2d');
+                const params = getParams();
+                const actualSize = state.sizes[state.mode];
+
+                // 只在数量变化时更新图标上传区域
+                if (params.items.length !== state.lastItemCount) {
+                    state.lastItemCount = params.items.length;
+                    generateIconGrid(params.items.length);
+                }
+
+                // 自适应计算预览比例
+                const wrapper = document.querySelector('.canvas-wrapper');
+                const wrapperRect = wrapper.getBoundingClientRect();
+                const availableWidth = wrapperRect.width - 20; // 留出边距
+                const availableHeight = wrapperRect.height - 20;
+
+                // 根据宽高比计算最佳缩放比例
+                const scaleX = availableWidth / actualSize.width;
+                const scaleY = availableHeight / actualSize.height;
+                const baseScale = Math.min(scaleX, scaleY, 0.8); // 基础缩放，提高上限让文字更清晰
+
+                // 应用鼠标滚轮缩放
+                const previewScale = baseScale * state.zoomScale;
+
+                // 使用高DPI渲染，提高清晰度
+                const dpr = window.devicePixelRatio || 1;
+                const displayWidth = Math.round(actualSize.width * previewScale);
+                const displayHeight = Math.round(actualSize.height * previewScale);
+
+                // 设置Canvas实际尺寸为显示尺寸的dpr倍
+                canvas.width = displayWidth * dpr;
+                canvas.height = displayHeight * dpr;
+                canvas.style.width = displayWidth + 'px';
+                canvas.style.height = displayHeight + 'px';
+
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.save();
+                // 先缩放到高DPI，再缩放到预览比例
+                ctx.scale(dpr * previewScale, dpr * previewScale);
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+
+                // 开启文字抗锯齿
+                ctx.textRendering = 'geometricPrecision';
+
+                drawBackground(ctx, actualSize.width, actualSize.height);
+                drawTitle(ctx, actualSize.width, actualSize.height, params);
+
+                if (state.mode === 'horizontal') {
+                    drawItemsHorizontal(ctx, actualSize.width, actualSize.height, params);
+                } else {
+                    drawItemsVertical(ctx, actualSize.width, actualSize.height, params);
+                }
+
+                // 绘制底部文字和二维码
+                drawFooter(ctx, actualSize.width, actualSize.height, params);
+
+                ctx.restore();
+            } catch (error) {
+                console.error('渲染错误:', error);
+            }
+        }
+
+        function drawBackground(ctx, W, H) {
+            const bgImage = state.bgImages[state.mode] || state.defaultBgImages[state.mode];
+            if (bgImage) {
+                ctx.drawImage(bgImage, 0, 0, W, H);
+            } else {
+                const gradient = ctx.createLinearGradient(0, 0, W, H);
+                gradient.addColorStop(0, '#0a0a0f');
+                gradient.addColorStop(0.5, '#1a1a2e');
+                gradient.addColorStop(1, '#0a0a0f');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, W, H);
+            }
+        }
+
+        function drawTitle(ctx, W, H, params) {
+            const title = '杆杆响天梯赛·积分兑换列表';
+            let fontSize = state.mode === 'horizontal'
+                ? Math.round(H * 0.055 * 1.5 * params.titleSize)
+                : Math.round(H * 0.04 * params.titleSize);
+
+            const y = Math.round(H * params.titleY);
+            const x = Math.round(W * params.titleX);
+
+            const glowLayers = Math.round(6 * params.glowIntensity);
+            for (let i = glowLayers; i >= 0; i--) {
+                const alpha = Math.min(0.4, 0.1 + i * 0.05);
+                ctx.font = `bold ${fontSize}px "${params.titleFont}"`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = `rgba(255, ${108 + i * 10}, ${i * 5}, ${alpha})`;
+                ctx.fillText(title, x, y);
+            }
+
+            ctx.font = `bold ${fontSize}px "${params.titleFont}"`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(title, x, y);
+
+            // 绘制标题右侧的二维码和Logo
+            drawTitleIcons(ctx, W, H, params);
+        }
+
+        // 绘制标题右侧的二维码和Logo
+        function drawTitleIcons(ctx, W, H, params) {
+            const iconY = Math.round(H * params.titleIconY);
+            const gap = params.titleIconGap;
+            const baseSize = Math.round(H * 0.06);
+
+            // 计算右侧X位置
+            const rightX = Math.round(W * params.titleIconX);
+
+            // 起始X位置（从右向左排列）
+            let currentX = rightX;
+
+            // 先绘制Logo（在右边）
+            if (state.logoImage) {
+                const logoSize = Math.round(baseSize * params.logoSize);
+                // 计算保持宽高比的尺寸
+                const imgRatio = state.logoImage.width / state.logoImage.height;
+                let drawWidth, drawHeight;
+                if (imgRatio > 1) {
+                    drawWidth = logoSize;
+                    drawHeight = logoSize / imgRatio;
+                } else {
+                    drawHeight = logoSize;
+                    drawWidth = logoSize * imgRatio;
+                }
+
+                const logoX = currentX - drawWidth;
+                const logoY = iconY - drawHeight / 2;
+
+                // 绘制圆形白色背景
+                const radius = Math.max(drawWidth, drawHeight) / 2 * 1.1;
+                ctx.beginPath();
+                ctx.arc(currentX - drawWidth / 2, iconY, radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+
+                // 绘制Logo（保持宽高比）
+                ctx.drawImage(state.logoImage, logoX, logoY, drawWidth, drawHeight);
+                currentX = logoX - gap;
+            }
+
+            // 再绘制二维码（在Logo左边）
+            if (state.qrcodeImage) {
+                const qrSize = Math.round(baseSize * params.qrcodeSize);
+                // 计算保持宽高比的尺寸
+                const imgRatio = state.qrcodeImage.width / state.qrcodeImage.height;
+                let drawWidth, drawHeight;
+                if (imgRatio > 1) {
+                    drawWidth = qrSize;
+                    drawHeight = qrSize / imgRatio;
+                } else {
+                    drawHeight = qrSize;
+                    drawWidth = qrSize * imgRatio;
+                }
+
+                const qrX = currentX - drawWidth;
+                const qrY = iconY - drawHeight / 2;
+
+                // 绘制圆形白色背景
+                const radius = Math.max(drawWidth, drawHeight) / 2 * 1.1;
+                ctx.beginPath();
+                ctx.arc(currentX - drawWidth / 2, iconY, radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+
+                // 绘制二维码（保持宽高比）
+                ctx.drawImage(state.qrcodeImage, qrX, qrY, drawWidth, drawHeight);
+            }
+        }
+
+        function drawItemsHorizontal(ctx, W, H, params) {
+            const items = params.items;
+            if (items.length === 0) return;
+
+            const mid = Math.ceil(items.length / 2);
+            const leftItems = items.slice(0, mid);
+            const rightItems = items.slice(mid);
+
+            const startY = H * 0.18;
+            const itemHeight = (H * 0.75) / Math.max(leftItems.length, rightItems.length);
+            const leftX = W * 0.05;
+            const rightX = W * 0.52;
+
+            leftItems.forEach((item, index) => {
+                drawItem(ctx, leftX, startY + index * itemHeight, W * 0.45, itemHeight, item, params, W, H);
+            });
+
+            rightItems.forEach((item, index) => {
+                drawItem(ctx, rightX, startY + index * itemHeight, W * 0.45, itemHeight, item, params, W, H);
+            });
+        }
+
+        function drawItemsVertical(ctx, W, H, params) {
+            const items = params.items;
+            if (items.length === 0) return;
+
+            const startY = H * 0.12;
+            const itemHeight = (H * 0.82) / items.length;
+            const x = W * 0.05;
+
+            items.forEach((item, index) => {
+                drawItem(ctx, x, startY + index * itemHeight, W * 0.9, itemHeight, item, params, W, H);
+            });
+        }
+
+        function drawItem(ctx, x, y, width, height, item, params, W, H) {
+            // 应用整体缩放
+            const scale = params.itemScale;
+            const centerX = x + width / 2;
+            const centerY = y + height / 2;
+
+            // 缩放后的尺寸
+            const scaledWidth = width * scale;
+            const scaledHeight = height * scale;
+            const scaledX = centerX - scaledWidth / 2;
+            const scaledY = centerY - scaledHeight / 2;
+
+            const padding = scaledHeight * 0.08;
+            const boxX = scaledX + padding;
+            const boxY = scaledY + padding;
+            const boxW = scaledWidth - padding * 2;
+            const boxH = scaledHeight - padding * 2;
+            const cornerRadius = Math.round(scaledHeight * 0.15 * scale);
+
+            ctx.shadowColor = 'rgba(255, 108, 0, 0.3)';
+            ctx.shadowBlur = 15;
+
+            ctx.beginPath();
+            ctx.roundRect(boxX, boxY, boxW, boxH, cornerRadius);
+            ctx.fillStyle = 'rgba(15, 15, 25, 0.7)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 108, 0, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+
+            // 序号圆圈 - 使用params.circleX控制X位置
+            const circleRadius = Math.round(scaledHeight * 0.22 * params.circleSize * scale);
+            const circleX = boxX + boxW * params.circleX;
+            const circleY = scaledY + scaledHeight / 2;
+
+            const gradient = ctx.createRadialGradient(circleX, circleY, 0, circleX, circleY, circleRadius);
+            gradient.addColorStop(0, '#DDA650');
+            gradient.addColorStop(1, '#FF6C00');
+
+            ctx.beginPath();
+            ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            const numText = String(item.number).padStart(2, '0');
+            const numFontSize = Math.round(circleRadius * 0.9);
+            ctx.font = `bold ${numFontSize}px "${params.bodyFont}"`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(numText, circleX, circleY);
+
+            // 积分文字
+            const pointsX = circleX + circleRadius + boxW * 0.03;
+            const pointsY = circleY + params.pointsY * scale;
+            const pointsFontSize = Math.round(scaledHeight * 0.32 * params.pointsSize * scale);
+            ctx.font = `bold ${pointsFontSize}px "${params.bodyFont}"`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#FF6C00';
+            ctx.fillText(item.points + '积分', pointsX, pointsY);
+
+            // 描述文字
+            const descX = pointsX;
+            const descY = circleY + params.descY * scale + pointsFontSize * 0.9;
+            const descFontSize = Math.round(scaledHeight * 0.26 * params.descSize * scale);
+            ctx.font = `${descFontSize}px "${params.bodyFont}"`;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(item.name, descX, descY);
+
+            // 右侧圆圈图标 - 只有上传了图标才显示
+            const matchedIcon = state.itemIcons[item.number];
+
+            if (matchedIcon) {
+                const iconRadius = Math.round(scaledHeight * 0.25 * params.iconSize * scale);
+                const iconX = boxX + boxW * params.iconX;
+                const iconY = circleY;
+
+                const iconGradient = ctx.createRadialGradient(iconX, iconY, 0, iconX, iconY, iconRadius);
+                iconGradient.addColorStop(0, '#DDA650');
+                iconGradient.addColorStop(1, '#FF6C00');
+
+                ctx.beginPath();
+                ctx.arc(iconX, iconY, iconRadius, 0, Math.PI * 2);
+                ctx.fillStyle = iconGradient;
+                ctx.fill();
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(iconX, iconY, iconRadius * 0.85, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.drawImage(matchedIcon, iconX - iconRadius * 0.85, iconY - iconRadius * 0.85, iconRadius * 1.7, iconRadius * 1.7);
+                ctx.restore();
+
+                // 绘制图标边框（橙色圆环）
+                if (params.iconBorder > 0) {
+                    const borderWidth = Math.max(1, Math.round(iconRadius * 0.08 * params.iconBorder));
+                    ctx.beginPath();
+                    ctx.arc(iconX, iconY, iconRadius - borderWidth / 2, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#FF6C00';
+                    ctx.lineWidth = borderWidth;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // 绘制底部文字
+        function drawFooter(ctx, W, H, params) {
+            // 绘制底部文字
+            const footerText = `最终解释权归${params.clubName}所有`;
+            const footerFontSize = Math.round(H * 0.018 * params.footerSize);
+            const footerX = W * params.footerX;
+            const footerY = H * params.footerY;
+
+            ctx.font = `${footerFontSize}px "${params.bodyFont}"`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillText(footerText, footerX, footerY);
+        }
+
+        // 导出图片
+        function exportImage() {
+            const params = getParams();
+            const actualSize = state.sizes[state.mode];
+
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = actualSize.width;
+            exportCanvas.height = actualSize.height;
+            const ctx = exportCanvas.getContext('2d');
+
+            drawBackground(ctx, actualSize.width, actualSize.height);
+            drawTitle(ctx, actualSize.width, actualSize.height, params);
+
+            if (state.mode === 'horizontal') {
+                drawItemsHorizontal(ctx, actualSize.width, actualSize.height, params);
+            } else {
+                drawItemsVertical(ctx, actualSize.width, actualSize.height, params);
+            }
+
+            // 绘制底部文字和二维码
+            drawFooter(ctx, actualSize.width, actualSize.height, params);
+
+            const link = document.createElement('a');
+            link.download = `积分兑换海报_${state.mode === 'horizontal' ? '横版' : '竖版'}.png`;
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // 更新显示值
+        function updateValueDisplays() {
+            document.getElementById('titleSizeVal').textContent = document.getElementById('titleSize').value + '%';
+            document.getElementById('titleXVal').textContent = document.getElementById('titleX').value + '%';
+            document.getElementById('titleYVal').textContent = document.getElementById('titleY').value + '%';
+            document.getElementById('glowIntensityVal').textContent = document.getElementById('glowIntensity').value + '%';
+            document.getElementById('circleSizeVal').textContent = document.getElementById('circleSize').value + '%';
+            document.getElementById('circleXVal').textContent = document.getElementById('circleX').value + '%';
+            document.getElementById('pointsSizeVal').textContent = document.getElementById('pointsSize').value + '%';
+            document.getElementById('pointsYVal').textContent = document.getElementById('pointsY').value;
+            document.getElementById('descSizeVal').textContent = document.getElementById('descSize').value + '%';
+            document.getElementById('descYVal').textContent = document.getElementById('descY').value;
+            document.getElementById('iconSizeVal').textContent = document.getElementById('iconSize').value + '%';
+            document.getElementById('iconXVal').textContent = document.getElementById('iconX').value + '%';
+            document.getElementById('iconBorderVal').textContent = document.getElementById('iconBorder').value + '%';
+            document.getElementById('itemScaleVal').textContent = document.getElementById('itemScale').value + '%';
+            document.getElementById('qrcodeSizeVal').textContent = document.getElementById('qrcodeSize').value + '%';
+            document.getElementById('logoSizeVal').textContent = document.getElementById('logoSize').value + '%';
+            document.getElementById('titleIconXVal').textContent = document.getElementById('titleIconX').value + '%';
+            document.getElementById('titleIconYVal').textContent = document.getElementById('titleIconY').value + '%';
+            document.getElementById('titleIconGapVal').textContent = document.getElementById('titleIconGap').value + 'px';
+            document.getElementById('footerSizeVal').textContent = document.getElementById('footerSize').value + '%';
+            document.getElementById('footerXVal').textContent = document.getElementById('footerX').value + '%';
+            document.getElementById('footerYVal').textContent = document.getElementById('footerY').value + '%';
+        }
+
+        // 背景图片上传
+        function handleBgUpload(mode, file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    state.bgImages[mode] = img;
+                    const btn = document.getElementById('bg' + mode.charAt(0).toUpperCase() + mode.slice(1) + 'Btn');
+                    const preview = document.getElementById('bg' + mode.charAt(0).toUpperCase() + mode.slice(1) + 'Preview');
+                    const clearBtn = document.getElementById('bg' + mode.charAt(0).toUpperCase() + mode.slice(1) + 'Clear');
+                    btn.classList.add('has-file');
+                    btn.textContent = file.name.substring(0, 12) + (file.name.length > 12 ? '...' : '');
+                    clearBtn.style.display = 'inline-block';
+                    preview.style.display = 'block';
+                    preview.innerHTML = '<img src="' + e.target.result + '">';
+                    render();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 字体上传
+        function handleFontUpload(type, file) {
+            if (!file) return;
+            const fontName = 'Custom' + type.charAt(0).toUpperCase() + type.slice(1) + 'Font';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fontFace = new FontFace(fontName, e.target.result);
+                fontFace.load().then(function(loadedFace) {
+                    document.fonts.add(loadedFace);
+                    state.customFonts[type] = fontName;
+                    const btn = document.getElementById(type + 'FontBtn');
+                    const clearBtn = document.getElementById(type + 'FontClear');
+                    btn.classList.add('has-file');
+                    btn.textContent = file.name.substring(0, 8) + (file.name.length > 8 ? '...' : '');
+                    clearBtn.style.display = 'inline-block';
+                    render();
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 绑定事件
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            el.addEventListener('input', () => {
+                updateValueDisplays();
+                render();
+            });
+        });
+
+        document.getElementById('bgHorizontal').addEventListener('change', e => handleBgUpload('horizontal', e.target.files[0]));
+        document.getElementById('bgVertical').addEventListener('change', e => handleBgUpload('vertical', e.target.files[0]));
+        document.getElementById('titleFontFile').addEventListener('change', e => handleFontUpload('title', e.target.files[0]));
+        document.getElementById('bodyFontFile').addEventListener('change', e => handleFontUpload('body', e.target.files[0]));
+
+        // 二维码上传
+        document.getElementById('qrcodeFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    state.qrcodeImage = img;
+                    const btn = document.getElementById('qrcodeBtn');
+                    const preview = document.getElementById('qrcodePreview');
+                    const clearBtn = document.getElementById('qrcodeClear');
+                    btn.classList.add('has-file');
+                    btn.textContent = '已上传';
+                    clearBtn.style.display = 'inline-block';
+                    preview.style.display = 'block';
+                    preview.innerHTML = '<img src="' + event.target.result + '">';
+                    render();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Logo上传
+        document.getElementById('logoFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    state.logoImage = img;
+                    const btn = document.getElementById('logoBtn');
+                    const preview = document.getElementById('logoPreview');
+                    const clearBtn = document.getElementById('logoClear');
+                    btn.classList.add('has-file');
+                    btn.textContent = '已上传';
+                    clearBtn.style.display = 'inline-block';
+                    preview.style.display = 'block';
+                    preview.innerHTML = '<img src="' + event.target.result + '">';
+                    render();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('listFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('itemList').value = event.target.result;
+                render();
+            };
+            reader.readAsText(file);
+        });
+
+        function loadTemplate() {
+            const template = `# 积分兑换列表模板
+# 格式：积分 描述
+# 每行一个兑换项目
+
+200 更换皮头手工费
+300 兑换巧克力
+500 炫彩皮头
+800 LP皮头
+1000 兑换价值130元会员
+2000 兑换价值300元会员
+480 兑换乔氏银腿1小时
+88 特色饮品
+1500 台费抵扣券
+3000 速食套餐`;
+            document.getElementById('itemList').value = template;
+            render();
+        }
+
+        // 初始化
+        updateValueDisplays();
+        loadDefaultBackgrounds();
+        render();
+
+        // 窗口大小变化时重新渲染
+        window.addEventListener('resize', render);
+
+        // 监听控制面板宽度变化
+        const observer = new ResizeObserver(render);
+        observer.observe(document.querySelector('.control-panel'));
+
+        // 鼠标滚轮缩放预览
+        const previewArea = document.querySelector('.preview-area');
+        previewArea.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            state.zoomScale = Math.max(0.2, Math.min(3.0, state.zoomScale + delta));
+            render();
+        }, { passive: false });
+    </script>
+</body>
+</html>
