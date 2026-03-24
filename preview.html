@@ -736,14 +736,14 @@
                 state.defaultBgImages.horizontal = bgHorizontal;
                 render();
             };
-            bgHorizontal.src = 'assets/bg.png';
+            bgHorizontal.src = 'bg.png';
 
             const bgVertical = new Image();
             bgVertical.onload = function() {
                 state.defaultBgImages.vertical = bgVertical;
                 render();
             };
-            bgVertical.src = 'assets/bg_9x16.png';
+            bgVertical.src = 'bg_9x16.png';
 
             // 加载产品图片数据库
             loadProductDatabase();
@@ -751,7 +751,7 @@
 
         // 加载产品图片数据库
         function loadProductDatabase() {
-            fetch('assets/icons.json')
+            fetch('icons.json')
                 .then(response => response.json())
                 .then(data => {
                     state.productDatabase = data;
@@ -776,7 +776,7 @@
                         if (category.images.length > 0) {
                             const img = category.images[0];
                             return {
-                                path: `assets/产品图片/${category.category}/${img.file}`,
+                                path: `产品图片/${category.category}/${img.file}`,
                                 name: img.name,
                                 category: category.category
                             };
